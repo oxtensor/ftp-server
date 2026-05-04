@@ -1,8 +1,9 @@
 import os
 import secrets
 from contextlib import asynccontextmanager
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
+from zoneinfo import ZoneInfo
 from urllib.parse import quote, urlencode
 
 import bcrypt
@@ -27,6 +28,8 @@ from dotenv import load_dotenv
 from db import ActivityLog, SessionLocal, User, get_db, init_db
 
 load_dotenv()
+
+UI_TZ = ZoneInfo("America/Los_Angeles")
 
 BASE_DIR = Path(__file__).resolve().parent
 UPLOAD_DIR = BASE_DIR / "uploads"
@@ -73,6 +76,18 @@ app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
 
 
+def format_ui_datetime(dt: datetime, *, with_seconds: bool = True) -> str:
+    """Format stored UTC datetimes for the UI in US Pacific (PDT/PST)."""
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    local = dt.astimezone(UI_TZ)
+    fmt = "%Y-%m-%d %H:%M:%S %Z" if with_seconds else "%Y-%m-%d %H:%M %Z"
+    return local.strftime(fmt)
+
+
+templates.env.filters["ui_dt"] = format_ui_datetime
+
+
 def current_user(request: Request) -> str | None:
     return request.session.get("user")
 
@@ -110,8 +125,9 @@ def list_files() -> list[dict]:
                 {
                     "name": entry.name,
                     "size": stat.st_size,
-                    "modified": datetime.fromtimestamp(stat.st_mtime).strftime(
-                        "%Y-%m-%d %H:%M"
+                    "modified": format_ui_datetime(
+                        datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc),
+                        with_seconds=False,
                     ),
                 }
             )

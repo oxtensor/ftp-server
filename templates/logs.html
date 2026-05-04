@@ -21,7 +21,7 @@
       <table class="log-table">
         <thead>
           <tr>
-            <th>Time</th>
+            <th>Time (Pacific)</th>
             <th>Event</th>
             <th>User</th>
             <th>IP</th>
@@ -33,7 +33,7 @@
         <tbody>
           {% for r in rows %}
             <tr>
-              <td class="mono">{{ r.timestamp.strftime("%Y-%m-%d %H:%M:%S") }}</td>
+              <td class="mono">{{ r.timestamp|ui_dt }}</td>
               <td><span class="badge ev-{{ r.event }}">{{ r.event }}</span></td>
               <td>{{ r.username or "—" }}</td>
               <td class="mono">{{ r.ip or "—" }}</td>
