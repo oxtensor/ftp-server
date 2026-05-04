@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Files{% endblock %}
+{% block content %}
+  <h1>Files</h1>
+
+  {% if user %}
+    <section class="card">
+      <h2>Upload</h2>
+      <form action="/upload" method="post" enctype="multipart/form-data" class="upload-form">
+        <input type="file" name="file" required>
+        <button type="submit">Upload</button>
+      </form>
+    </section>
+  {% else %}
+    <p class="hint">Anyone can download. <a href="/login">Login</a> to upload.</p>
+  {% endif %}
+
+  <section class="card">
+    <h2>Available files</h2>
+    {% if files %}
+      <table>
+        <thead>
+          <tr><th>Name</th><th>Size</th><th>Modified</th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for f in files %}
+            <tr>
+              <td><a href="/files/{{ f.name }}">{{ f.name }}</a></td>
+              <td>{{ "%.1f KB"|format(f.size / 1024) }}</td>
+              <td>{{ f.modified }}</td>
+              <td>
+                {% if user %}
+                  <form action="/delete/{{ f.name }}" method="post" class="inline"
+                        onsubmit="return confirm('Delete {{ f.name }}?');">
+                    <button type="submit" class="danger">Delete</button>
+                  </form>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="empty">No files yet.</p>
+    {% endif %}
+  </section>
+{% endblock %}

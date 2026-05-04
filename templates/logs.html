@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Activity log{% endblock %}
+{% block content %}
+  <h1>Activity log</h1>
+  <p class="hint">{{ total }} total event{{ '' if total == 1 else 's' }}.</p>
+
+  <form method="get" class="filter-form">
+    <select name="event">
+      <option value="">All events</option>
+      {% for e in events %}
+        <option value="{{ e }}" {% if e == selected_event %}selected{% endif %}>{{ e }}</option>
+      {% endfor %}
+    </select>
+    <input type="text" name="q" value="{{ q }}" placeholder="Search user, IP, file, agent">
+    <button type="submit">Filter</button>
+    {% if selected_event or q %}<a class="reset" href="/logs">Reset</a>{% endif %}
+  </form>
+
+  {% if rows %}
+    <div class="table-wrap">
+      <table class="log-table">
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Event</th>
+            <th>User</th>
+            <th>IP</th>
+            <th>File</th>
+            <th>Size</th>
+            <th>User-Agent</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in rows %}
+            <tr>
+              <td class="mono">{{ r.timestamp.strftime("%Y-%m-%d %H:%M:%S") }}</td>
+              <td><span class="badge ev-{{ r.event }}">{{ r.event }}</span></td>
+              <td>{{ r.username or "—" }}</td>
+              <td class="mono">{{ r.ip or "—" }}</td>
+              <td>{{ r.filename or "—" }}</td>
+              <td>{% if r.size is not none %}{{ "%.1f KB"|format(r.size / 1024) }}{% else %}—{% endif %}</td>
+              <td class="ua" title="{{ r.user_agent or '' }}">{{ (r.user_agent or "—")[:60] }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if total_pages > 1 %}
+      <nav class="pager">
+        {% if page > 1 %}<a href="{{ page_link(page - 1) }}">&laquo; Prev</a>{% endif %}
+        <span>Page {{ page }} of {{ total_pages }}</span>
+        {% if page < total_pages %}<a href="{{ page_link(page + 1) }}">Next &raquo;</a>{% endif %}
+      </nav>
+    {% endif %}
+  {% else %}
+    <p class="empty">No matching events.</p>
+  {% endif %}
+{% endblock %}
