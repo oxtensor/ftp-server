@@ -6,15 +6,27 @@ from pathlib import Path
 from urllib.parse import quote, urlencode
 
 import bcrypt
-from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, UploadFile, status
+from fastapi import (
+    Depends,
+    FastAPI,
+    File,
+    Form,
+    HTTPException,
+    Request,
+    UploadFile,
+    status,
+)
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import desc, func, or_, select
 from sqlalchemy.orm import Session
 from starlette.middleware.sessions import SessionMiddleware
+from dotenv import load_dotenv
 
 from db import ActivityLog, SessionLocal, User, get_db, init_db
+
+load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent
 UPLOAD_DIR = BASE_DIR / "uploads"
@@ -47,8 +59,8 @@ async def lifespan(app: FastAPI):
     init_db()
     with SessionLocal() as db:
         if db.scalar(select(func.count()).select_from(User)) == 0:
-            username = os.environ.get("ADMIN_USER", "admin")
-            password = os.environ.get("ADMIN_PASSWORD", "admin123")
+            username = os.getenv("ADMIN_USER", "admin")
+            password = os.getenv("ADMIN_PASSWORD", "admin123")
             db.add(User(username=username, password_hash=hash_password(password)))
             db.commit()
             print(f"[bootstrap] seeded user: {username}")
@@ -98,7 +110,9 @@ def list_files() -> list[dict]:
                 {
                     "name": entry.name,
                     "size": stat.st_size,
-                    "modified": datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M"),
+                    "modified": datetime.fromtimestamp(stat.st_mtime).strftime(
+                        "%Y-%m-%d %H:%M"
+                    ),
                 }
             )
     return items
@@ -295,7 +309,7 @@ if __name__ == "__main__":
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
-        port=8000,
+        port=int(os.getenv("PORT", 9000)),
         reload=True,
         reload_includes=["*.py", "templates/*.html", "static/*.css"],
         reload_excludes=["uploads/*", "*.db", "*.db-journal", "__pycache__/*"],
