@@ -1,3 +1,4 @@
+import os
 import secrets
 from contextlib import asynccontextmanager
 from datetime import datetime
@@ -46,9 +47,11 @@ async def lifespan(app: FastAPI):
     init_db()
     with SessionLocal() as db:
         if db.scalar(select(func.count()).select_from(User)) == 0:
-            db.add(User(username="admin", password_hash=hash_password("admin123")))
+            username = os.environ.get("ADMIN_USER", "admin")
+            password = os.environ.get("ADMIN_PASSWORD", "admin123")
+            db.add(User(username=username, password_hash=hash_password(password)))
             db.commit()
-            print("[bootstrap] seeded default user: admin / admin123")
+            print(f"[bootstrap] seeded user: {username}")
     yield
 
 
