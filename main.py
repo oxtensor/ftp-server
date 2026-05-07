@@ -324,8 +324,8 @@ if __name__ == "__main__":
 
     uvicorn.run(
         "main:app",
-        host="0.0.0.0",
-        port=int(os.getenv("PORT", 9000)),
+        host="127.0.0.1",
+        port=int(os.getenv("PORT", 3050)),
         reload=True,
         reload_includes=["*.py", "templates/*.html", "static/*.css"],
         reload_excludes=["uploads/*", "*.db", "*.db-journal", "__pycache__/*"],

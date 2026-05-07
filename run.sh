@@ -1,1 +1,1 @@
-pm2 start "uvicorn main:app --host 0.0.0.0 --port 8443 --ssl-keyfile ssl/key.pem --ssl-certfile ssl/cert.pem" --name "file-server"
+pm2 start "uvicorn main:app --host 127.0.0.1 --port 3050" --name "file-server"
