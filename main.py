@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
-from urllib.parse import quote, urlencode
+from urllib.parse import urlencode
 
 import bcrypt
 from fastapi import (
@@ -269,11 +269,11 @@ async def download(request: Request, filename: str, db: Session = Depends(get_db
         filename=filename,
         size=target.stat().st_size,
     )
-    return FileResponse(
-        target,
-        filename=filename,
-        headers={"Content-Disposition": f'attachment; filename="{quote(filename)}"'},
-    )
+    # FileResponse builds an "attachment" Content-Disposition itself, switching to
+    # RFC 5987 filename*=utf-8''... for names that need escaping (spaces,
+    # non-ASCII, quotes). Percent-escapes inside plain filename="..." are not
+    # decoded by clients, so don't override it.
+    return FileResponse(target, filename=filename)
 
 
 @app.get("/logs", response_class=HTMLResponse)
