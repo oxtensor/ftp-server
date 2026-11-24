@@ -25,13 +25,15 @@
         <tbody>
           {% for f in files %}
             <tr>
-              <td><a href="/files/{{ f.name }}">{{ f.name }}</a></td>
+              <td><a href="/files/{{ f.name|urlencode }}">{{ f.name }}</a></td>
               <td>{{ "%.1f KB"|format(f.size / 1024) }}</td>
               <td>{{ f.modified }}</td>
               <td>
                 {% if user %}
-                  <form action="/delete/{{ f.name }}" method="post" class="inline"
-                        onsubmit="return confirm('Delete {{ f.name }}?');">
+                  {# Pass the name as data, never spliced into the inline script. #}
+                  <form action="/delete/{{ f.name|urlencode }}" method="post" class="inline"
+                        data-name="{{ f.name }}"
+                        onsubmit="return confirm('Delete ' + this.dataset.name + '?');">
                     <button type="submit" class="danger">Delete</button>
                   </form>
                 {% endif %}
