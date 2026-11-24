@@ -104,9 +104,10 @@ def require_user(request: Request) -> str:
 
 
 def client_ip(request: Request) -> str:
-    forwarded = request.headers.get("x-forwarded-for")
-    if forwarded:
-        return forwarded.split(",")[0].strip()
+    # Never read X-Forwarded-For here: its leftmost entry is whatever the client
+    # sent. uvicorn's proxy-headers handling (on by default) already replaces
+    # request.client with the real address, but only for trusted proxies
+    # (127.0.0.1 by default; see --forwarded-allow-ips / FORWARDED_ALLOW_IPS).
     return request.client.host if request.client else "?"
 
 
