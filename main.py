@@ -1,5 +1,6 @@
 import os
 import secrets
+import tempfile
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from pathlib import Path
@@ -215,16 +216,27 @@ async def upload(
     user: str = Depends(require_user),
     db: Session = Depends(get_db),
 ):
-    filename = Path(file.filename or "").name
-    if not filename:
-        raise HTTPException(status_code=400, detail="Missing filename")
-    target = safe_resolve(filename)
+    try:
+        raw_filename = file.filename or ""
+        filename = Path(raw_filename).name
+        if not filename:
+            raise HTTPException(status_code=400, detail="Missing filename")
+        if filename in {".", ".."} or "\x00" in raw_filename:
+            raise HTTPException(status_code=400, detail="Invalid filename")
+        target = safe_resolve(filename)
 
-    size = 0
-    with target.open("wb") as out:
-        while chunk := await file.read(1024 * 1024):
-            out.write(chunk)
-            size += len(chunk)
+        size = 0
+        # A private subdirectory keeps partial uploads out of public listings.
+        # The final replace is atomic because it stays on the same filesystem.
+        with tempfile.TemporaryDirectory(dir=UPLOAD_DIR, prefix=".upload-") as temp_dir:
+            temp_path = Path(temp_dir) / "upload"
+            with temp_path.open("wb") as out:
+                while chunk := await file.read(1024 * 1024):
+                    out.write(chunk)
+                    size += len(chunk)
+            temp_path.replace(target)
+    finally:
+        await file.close()
 
     record(db, request, "UPLOAD", username=user, filename=filename, size=size)
     return RedirectResponse("/", status_code=303)
